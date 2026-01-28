@@ -1,9 +1,6 @@
-from .start import *
-from .profile import *
-from .deposit import *
-from .referral import *
-from .order_history import *
-from .wallet import *
+# Nexa/__init__.py
 
-# Admin
-from .admin import *
+# Do NOT import plugins here
+# Pyrogram loads plugins automatically
+
+__all__ = []
