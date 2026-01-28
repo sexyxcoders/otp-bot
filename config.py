@@ -10,8 +10,8 @@ BOT_TOKEN = os.getenv("BOT_TOKEN", "7883129570:AAENeLvTsdrAmFxFgzW0yYSP2RMsQ4TEl
 # ==============================
 # Bot Details
 # ==============================
-BOT_NAME = os.getenv("BOT_NAME", "Neca")
-BOT_USERNAME = os.getenv("BOT_USERNAME", "LucusMusicBot")
+BOT_NAME = os.getenv("BOT_NAME", "Nexa Panel Bot")
+BOT_USERNAME = os.getenv("BOT_USERNAME", "NexaPanelRobot")
 
 # ==============================
 # Must Join Channel (without @)
