@@ -4,7 +4,7 @@ from .deposit import *
 from .wallet import *
 from .profile import *
 from .referral import *
-from .history import *
+from .order_history import *
 
 print(">>> USER PLUGINS LOADED <<<")
 
