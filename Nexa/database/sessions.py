@@ -25,6 +25,13 @@ def add_session(country: str, price: float, stock: int, string: str, two_step: b
     sessions_col.insert_one(session)
     return session
 
+# Return all active sessions (stock > 0 and not revoked)
+def get_sessions(active_only=True):
+    query = {}
+    if active_only:
+        query = {"stock": {"$gt": 0}, "revoked": False}
+    return list(sessions_col.find(query))
+
 # -----------------------
 # Remove session
 # -----------------------
