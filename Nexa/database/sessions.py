@@ -3,17 +3,17 @@ from pymongo import MongoClient
 from datetime import datetime
 import config
 
-client = MongoClient(config.MONGO_URL)
+client = MongoClient(config.MONGO_URI)
 db = client['nexa_bot']
 
 sessions_col = db.sessions
 
 # -----------------------
-# Add session
+# Add a session
 # -----------------------
 def add_session(country, price, stock, string, two_step=False, added_by=None):
     session = {
-        "session_id": string[:10] + str(datetime.utcnow().timestamp()),  # unique ID
+        "session_id": string[:10] + str(datetime.utcnow().timestamp()),
         "country": country,
         "price": price,
         "stock": stock,
@@ -27,13 +27,13 @@ def add_session(country, price, stock, string, two_step=False, added_by=None):
     return session
 
 # -----------------------
-# Remove session
+# Remove a session
 # -----------------------
 def remove_session(session_id):
     sessions_col.delete_one({"session_id": session_id})
 
 # -----------------------
-# Revoke session
+# Revoke a session
 # -----------------------
 def revoke_session(session_id, revoked_by=None, revoked_at=None):
     sessions_col.update_one(
@@ -48,13 +48,19 @@ def list_sessions():
     return list(sessions_col.find())
 
 # -----------------------
-# Get available countries from sessions
+# Get single session by ID
+# -----------------------
+def get_session(session_id):
+    return sessions_col.find_one({"session_id": session_id})
+
+# -----------------------
+# Get all available countries
 # -----------------------
 def get_available_countries():
     return sessions_col.distinct("country")
 
 # -----------------------
-# Update stock
+# Update stock for country
 # -----------------------
 def update_stock(country, qty):
     sessions_col.update_many({"country": country}, {"$inc": {"stock": qty}})
