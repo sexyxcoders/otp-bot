@@ -1,14 +1,4 @@
-# Admin Plugin - __init__.py
-# This file ensures all admin modules are imported and available
+# Root plugins package
+# Pyrogram will auto-load all plugin files from this directory
 
-from .panel import *
-from .country import *
-from .price import *
-from .sessions import *
-from .revoke_session import *
-from .stock import *
-from .users import *
-from .history import *
-from .deposits import *
-from .referral import *
-from .broadcast import *
+print(">>> ROOT PLUGINS LOADED <<<")
