@@ -1,6 +1,2 @@
-# Nexa/plugins/__init__.py
-from .deposit import *
-from .wallet import *
 from .start import *
-from .referral import *
-from .order_history import *
+from .otp import *
