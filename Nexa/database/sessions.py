@@ -7,6 +7,13 @@ client = MongoClient(config.MONGO_URL)
 db = client['nexa_bot']
 sessions_col = db.sessions
 
+
+# -----------------------
+# Get stock for a country
+# -----------------------
+def get_stock(country):
+    s = sessions_col.find_one({"country": country})
+    return s.get("stock") if s else 0
 # -----------------------
 # Add a new session
 # -----------------------
