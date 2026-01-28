@@ -3,6 +3,9 @@ from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from Nexa.database.users import is_admin
 
+# -----------------------
+# Admin Keyboard
+# -----------------------
 def admin_keyboard():
     return InlineKeyboardMarkup([
         [
@@ -19,7 +22,7 @@ def admin_keyboard():
         ],
         [
             InlineKeyboardButton("❌ Remove Session", callback_data="remove_session"),
-            InlineKeyboardButton("🛑 Revoke Session", callback_data="admin_revoke_session")
+            InlineKeyboardButton("🛑 Revoke Session", callback_data="revoke_session")
         ],
         [
             InlineKeyboardButton("📦 Stock", callback_data="admin_stock"),
@@ -42,15 +45,29 @@ def admin_keyboard():
         ]
     ])
 
+# -----------------------
+# Callback: Open Admin Panel
+# -----------------------
 @app.on_callback_query(filters.regex("^admin_panel$"))
 async def admin_panel_cb(_, cq):
     if not is_admin(cq.from_user.id):
         return await cq.answer("❌ Not allowed", show_alert=True)
-    await cq.message.edit_text("👑 **Admin Panel**", reply_markup=admin_keyboard())
+
+    await cq.message.edit_text(
+        "👑 **Admin Panel**",
+        reply_markup=admin_keyboard()
+    )
     await cq.answer()
 
+# -----------------------
+# Command: /admin or /panel
+# -----------------------
 @app.on_message(filters.private & filters.command(["admin", "panel"]))
 async def admin_panel_cmd(_, message):
     if not is_admin(message.from_user.id):
         return await message.reply_text("❌ You are not an admin")
-    await message.reply_text("👑 **Admin Panel**", reply_markup=admin_keyboard())
+
+    await message.reply_text(
+        "👑 **Admin Panel**",
+        reply_markup=admin_keyboard()
+    )
