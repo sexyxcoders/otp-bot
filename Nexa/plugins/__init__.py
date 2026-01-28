@@ -1,13 +1,11 @@
-# Root plugins package
-# Only import root modules here
-# Do NOT import admin plugins
+# Import all user plugins
+from .start import *
+from .deposit import *
+from .wallet import *
+from .profile import *
+from .referral import *
+from .history import *
 
-from . import deposit
-from . import referral
-from . import order_history
-from . import sessions
-from . import wallet
-from . import profile
-from . import start
+print(">>> USER PLUGINS LOADED <<<")
 
 print(">>> ROOT PLUGINS LOADED <<<")
