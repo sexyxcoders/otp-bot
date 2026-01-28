@@ -18,7 +18,7 @@ def admin_keyboard():
         ],
         [
             InlineKeyboardButton("📲 Sessions", callback_data="admin_sessions"),
-            InlineKeyboardButton("➕ Add Session", callback_data="add_session")
+            InlineKeyboardButton("➕ Add Session", callback_data="admin_session")
         ],
         [
             InlineKeyboardButton("❌ Remove Session", callback_data="remove_session"),
