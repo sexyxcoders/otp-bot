@@ -1,3 +1,4 @@
+# Nexa/plugins/admin/stock.py
 from Nexa.core.client import app
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -9,7 +10,23 @@ async def admin_stock_cb(_, cq):
     if not is_admin(cq.from_user.id):
         return await cq.answer("❌ Not allowed", show_alert=True)
 
-    text = "📦 **Stock per country**\n\n"
-    for c in get_countries():
-        text += f"{c}: {get_stock(c)}\n"
-    await cq.message.edit_text(text, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]]))
+    countries = get_countries()
+    if not countries:
+        return await cq.message.edit_text(
+            "⚠️ No countries found.",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
+        )
+
+    # Create buttons for each country with stock displayed
+    buttons = []
+    for country in countries:
+        stock = get_stock(country)
+        buttons.append([InlineKeyboardButton(f"{country}: {stock}", callback_data=f"admin_stock_{country}")])
+
+    # Add back button
+    buttons.append([InlineKeyboardButton("🔙 Back", callback_data="admin_panel")])
+
+    await cq.message.edit_text(
+        "📦 **Stock per Country**\nSelect a country to manage:",
+        reply_markup=InlineKeyboardMarkup(buttons)
+    )
