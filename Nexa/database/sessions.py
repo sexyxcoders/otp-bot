@@ -87,3 +87,25 @@ def get_countries():
 def get_country_info(country):
     """Return first session info for a country"""
     return sessions_col.find_one({"country": country})
+
+# -----------------------
+# Assign a session to a user
+# -----------------------
+def assign_session_to_user(user_id, country):
+    """
+    Assign an available (non-revoked, in-stock) session from a country to a user.
+    Decrements stock by 1.
+    Returns the session document or None if unavailable.
+    """
+    session = sessions_col.find_one_and_update(
+        {"country": country, "stock": {"$gt": 0}, "revoked": False},
+        {"$inc": {"stock": -1}},
+        sort=[("created_at", 1)]
+    )
+    if session:
+        # You could also store assignment info in session if needed
+        sessions_col.update_one(
+            {"session_id": session["session_id"]},
+            {"$set": {"assigned_to": user_id, "assigned_at": datetime.utcnow()}}
+        )
+    return session
