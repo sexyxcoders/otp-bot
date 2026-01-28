@@ -1,3 +1,8 @@
+# -----------------------
+# Nexa/database/__init__.py
+# -----------------------
+
+# Users
 from .users import (
     create_user,
     update_username,
@@ -8,6 +13,7 @@ from .users import (
     is_admin
 )
 
+# Orders
 from .orders import (
     create_order,
     get_order,
@@ -16,6 +22,7 @@ from .orders import (
     update_order_status
 )
 
+# Deposits
 from .deposits import (
     add_deposit,
     get_pending_deposits,
@@ -24,6 +31,7 @@ from .deposits import (
     approve_deposit
 )
 
+# Referral
 from .referral import (
     add_referral,
     add_earning,
@@ -33,16 +41,16 @@ from .referral import (
     reset_referral_earnings
 )
 
-# -----------------------
 # Sessions
-# -----------------------
 from .sessions import (
     add_session,
     remove_session,
     update_stock,
     get_session,
+    get_active_sessions,
     get_available_countries,
     get_country_info,
+    assign_session_to_user,
     revoke_session,
     expire_session,
     add_country,
@@ -50,12 +58,10 @@ from .sessions import (
     get_countries,
     set_price,
     get_price,
-    list_sessions,
-    normalize_country,
-    assign_session_to_user,
-    get_active_sessions   # ✅ add here
+    get_stock
 )
 
+# OTP Codes
 from .otp_codes import (
     store_otp,
     get_latest_otp,
