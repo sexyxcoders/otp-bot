@@ -1,11 +1,6 @@
-# Import all user plugins
-from .start import *
+# Nexa/plugins/__init__.py
 from .deposit import *
 from .wallet import *
-from .profile import *
+from .start import *
 from .referral import *
-from .order_history import *
-
-print(">>> USER PLUGINS LOADED <<<")
-
-print(">>> ROOT PLUGINS LOADED <<<")
+from .history import *
