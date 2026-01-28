@@ -51,3 +51,21 @@ def add_balance(user_id: int, amount: float):
 
 def is_admin(user_id: int) -> bool:
     return user_id in config.ADMINS
+
+# -----------------------
+# Ensure user exists in DB
+# -----------------------
+def ensure_user(user_id, username=None):
+    """
+    Creates the user if it doesn't exist.
+    Updates username if provided.
+    Returns the user document.
+    """
+    user = get_user(user_id)
+    if user is None:
+        create_user(user_id, username=username)
+        user = get_user(user_id)
+    elif username and user.get("username") != username:
+        update_username(user_id, username)
+        user = get_user(user_id)
+    return user
