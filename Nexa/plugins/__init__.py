@@ -23,8 +23,6 @@ from .admin import users
 from .admin import deposits
 from .admin import history
 from .admin import referral
-from .admin import add_balance
-from .admin import subtract_balance
 from .admin import user_history
 from .admin import broadcast
 from .admin import sessions as admin_sessions
