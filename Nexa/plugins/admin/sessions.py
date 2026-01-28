@@ -1,9 +1,23 @@
+from uuid import uuid4
+from datetime import datetime
+
 from Nexa.core.client import app
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from Nexa.database.users import is_admin
-from Nexa.database.sessions import add_session, remove_session
+from pyrogram.errors import MessageNotModified
 
+from Nexa.database.users import is_admin
+from Nexa.database.sessions import (
+    add_session,
+    remove_session,
+    list_sessions,
+    normalize_country
+)
+
+
+# =========================
+# ADMIN SESSION PANEL
+# =========================
 
 @app.on_callback_query(filters.regex("^admin_sessions$"))
 async def admin_sessions_cb(_, cq):
@@ -12,89 +26,138 @@ async def admin_sessions_cb(_, cq):
 
     text = (
         "📲 **Session Management**\n\n"
-        "To add a session:\n"
-        "`/addsession Country | Price | Stock | SessionString | 2FA(True/False)`\n\n"
-        "To remove a session:\n"
-        "`/removesession [session_id]`"
-    )
-    
-    await cq.message.edit_text(
-        text,
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
+        "**Add session:**\n"
+        "`/addsession Country | Price | Stock | String | 2FA(True/False)`\n\n"
+        "**Remove session:**\n"
+        "`/removesession <session_id>`\n\n"
+        "**View sessions:**\n"
+        "`/sessions`"
     )
 
+    try:
+        await cq.message.edit_text(
+            text,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📋 View Sessions", callback_data="admin_list_sessions")],
+                [InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]
+            ])
+        )
+    except MessageNotModified:
+        pass
 
-@app.on_callback_query(filters.regex("^add_session$"))
-async def add_session_cb(_, cq):
+
+# =========================
+# LIST SESSIONS
+# =========================
+
+@app.on_callback_query(filters.regex("^admin_list_sessions$"))
+async def admin_list_sessions(_, cq):
     if not is_admin(cq.from_user.id):
-        return await cq.answer("❌ Not allowed", show_alert=True)
-        
-    await cq.message.edit_text(
-        "➕ **Add Session**\n\n"
-        "To add a new session, use the command:\n"
-        "`/addsession Country | Price | Stock | String | 2FA`\n\n"
-        "Example:\n`/addsession India | 15 | 1 | 1B... | False`",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
-    )
+        return
+
+    sessions = list_sessions()
+
+    if not sessions:
+        text = "📭 No sessions available."
+    else:
+        text = "📋 **Available Sessions**\n\n"
+        for s in sessions:
+            text += (
+                f"🆔 `{s['session_id']}`\n"
+                f"🌍 {s['country']} | 💰 ₹{s['price']} | 📦 {s['stock']}\n"
+                f"🔐 2FA: {s['two_step']}\n\n"
+            )
+
+    try:
+        await cq.message.edit_text(
+            text,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back", callback_data="admin_sessions")]
+            ])
+        )
+    except MessageNotModified:
+        pass
 
 
-@app.on_callback_query(filters.regex("^remove_session$"))
-async def remove_session_cb(_, cq):
-    if not is_admin(cq.from_user.id):
-        return await cq.answer("❌ Not allowed", show_alert=True)
-        
-    await cq.message.edit_text(
-        "❌ **Remove Session**\n\n"
-        "To remove a session, use the command:\n"
-        "`/removesession [Session_ID]`",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
-    )
+# =========================
+# ADD SESSION COMMAND
+# =========================
 
-
-@app.on_message(filters.command("addsession"))
+@app.on_message(filters.private & filters.command("addsession"))
 async def add_session_cmd(_, msg):
     if not is_admin(msg.from_user.id):
         return
 
     try:
         # /addsession Country | Price | Stock | String | 2FA
-        args = msg.text.split(" ", 1)[1].split("|")
+        raw = msg.text.split(" ", 1)[1]
+        args = [x.strip() for x in raw.split("|")]
+
         if len(args) < 4:
             raise ValueError
-            
-        country = args[0].strip()
-        price = float(args[1].strip())
-        stock = int(args[2].strip())
-        string_session = args[3].strip()
-        two_step = args[4].strip().lower() == "true" if len(args) > 4 else False
-        
-        add_session(country, price, stock, string_session, two_step, msg.from_user.id)
-        
-        await msg.reply(
-            f"✅ **Session Added**\n\nCountry: {country}\nPrice: {price}\nStock: {stock}",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Admin Panel", callback_data="admin_panel")]])
+
+        country = normalize_country(args[0])
+        price = float(args[1])
+        stock = int(args[2])
+        string_session = args[3]
+        two_step = args[4].lower() == "true" if len(args) > 4 else False
+
+        session_id = str(uuid4())[:8]
+
+        add_session(
+            session_id=session_id,
+            country=country,
+            price=price,
+            stock=stock,
+            string_session=string_session,
+            two_step=two_step,
+            added_by=msg.from_user.id,
+            created_at=datetime.utcnow()
         )
+
+        await msg.reply(
+            f"✅ **Session Added**\n\n"
+            f"🆔 `{session_id}`\n"
+            f"🌍 {country}\n"
+            f"💰 ₹{price}\n"
+            f"📦 {stock}\n"
+            f"🔐 2FA: {two_step}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🏠 Admin Panel", callback_data="admin_panel")]
+            ])
+        )
+
     except Exception:
         await msg.reply(
-            "❌ **Error**\n\nUsage:\n`/addsession Country | Price | Stock | String | 2FA`",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Admin Panel", callback_data="admin_panel")]])
+            "❌ **Invalid Format**\n\n"
+            "`/addsession Country | Price | Stock | String | 2FA`\n\n"
+            "Example:\n"
+            "`/addsession US | 35 | 5 | 1B... | False`"
         )
 
 
-@app.on_message(filters.command("removesession"))
+# =========================
+# REMOVE SESSION COMMAND
+# =========================
+
+@app.on_message(filters.private & filters.command("removesession"))
 async def remove_session_cmd(_, msg):
     if not is_admin(msg.from_user.id):
         return
 
     try:
-        session_id = msg.text.split(maxsplit=1)[1]
-        remove_session(session_id)
+        session_id = msg.text.split(maxsplit=1)[1].strip()
+        removed = remove_session(session_id)
+
+        if not removed:
+            return await msg.reply("❌ Session not found.")
+
         await msg.reply(
-            "✅ **Session Removed**",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Admin Panel", callback_data="admin_panel")]])
+            f"🗑 **Session Removed**\n\nID: `{session_id}`",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🏠 Admin Panel", callback_data="admin_panel")]
+            ])
         )
+
     except IndexError:
-        await msg.reply(
-            "❌ **Error**\n\nUsage: `/removesession [session_id]`",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🏠 Admin Panel", callback_data="admin_panel")]])
-        )
+        await msg.reply("❌ Usage: `/removesession <session_id>`")
