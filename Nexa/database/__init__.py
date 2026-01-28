@@ -1,3 +1,4 @@
-from .users import *
-from .sessions import *
-from .otp_codes import *
+from . import users
+from . import sessions
+from . import otp_codes
+from . import deposits   
