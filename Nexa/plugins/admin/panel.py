@@ -49,10 +49,16 @@ async def admin_panel_cb(_, cq):
     if not is_admin(cq.from_user.id):
         return await cq.answer("❌ Not allowed", show_alert=True)
 
-    await cq.message.edit_text(
-        "👑 **Admin Panel**",
-        reply_markup=admin_keyboard()
-    )
+    # Safely edit message only if content changes
+    try:
+        await cq.message.edit_text(
+            "👑 **Admin Panel**",
+            reply_markup=admin_keyboard()
+        )
+    except:
+        # Ignore MESSAGE_NOT_MODIFIED error
+        pass
+
     await cq.answer()
 
 # 🔑 COMMAND: /admin OR /panel
