@@ -1,4 +1,4 @@
-# Root plugins package
-# Pyrogram will auto-load all plugin files from this directory
+# Admin plugins package
+# Admin-only handlers live here
 
-print(">>> ROOT PLUGINS LOADED <<<")
+print(">>> ADMIN PLUGINS LOADED <<<")
