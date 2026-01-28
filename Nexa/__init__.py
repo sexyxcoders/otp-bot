@@ -9,14 +9,7 @@ from .core.otp_manager import *
 # ----------------------------
 # Database
 # ----------------------------
-from .database import (
-    users,
-    sessions,
-    otp_codes,
-    deposits,
-    orders,
-    referral
-)
+
 
 # ----------------------------
 # Plugins
