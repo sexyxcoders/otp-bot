@@ -2,50 +2,47 @@ from Nexa.core.client import app
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from Nexa.database.users import is_admin
-from Nexa.database.sessions import add_country, remove_country
+from Nexa.database.sessions import add_country, get_countries
 
-
-@app.on_message(filters.command("addcountry"))
-async def add_country_cmd(_, msg):
-    if not is_admin(msg.from_user.id):
-        return
-    country = msg.text.split(maxsplit=1)[1]
-    add_country(country)
-    await msg.reply(f"✅ Country **{country}** added")
-
-
-@app.on_message(filters.command("removecountry"))
-async def remove_country_cmd(_, msg):
-    if not is_admin(msg.from_user.id):
-        return
-    country = msg.text.split(maxsplit=1)[1]
-    remove_country(country)
-    await msg.reply(f"❌ Country **{country}** removed")
-
-
+# ----------------------
+# INLINE ADD COUNTRY MENU
+# ----------------------
 @app.on_callback_query(filters.regex("^add_country$"))
 async def add_country_cb(_, cq):
     if not is_admin(cq.from_user.id):
         return await cq.answer("❌ Not allowed", show_alert=True)
-        
-    await cq.message.edit_text(
-        "➕ **Add Country**\n\n"
-        "To add a new country, use the command:\n"
-        "`/addcountry [Name]`\n\n"
-        "Example: `/addcountry India`",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
-    )
+
+    countries = ["India", "USA", "UK", "Germany", "France", "Japan", "Australia"]  # You can change default list
+    text = "➕ **Add Country**\n\nSelect a country to add:"
+
+    buttons = []
+    for c in countries:
+        buttons.append([InlineKeyboardButton(c, callback_data=f"add_country_now|{c}")])
+    buttons.append([InlineKeyboardButton("🔙 Back", callback_data="admin_panel")])
+
+    await cq.message.edit_text(text, reply_markup=InlineKeyboardMarkup(buttons))
 
 
-@app.on_callback_query(filters.regex("^remove_country$"))
-async def remove_country_cb(_, cq):
+# ----------------------
+# ADD COUNTRY INLINE ACTION
+# ----------------------
+@app.on_callback_query(filters.regex(r"^add_country_now\|(.+)$"))
+async def add_country_now_cb(_, cq):
     if not is_admin(cq.from_user.id):
         return await cq.answer("❌ Not allowed", show_alert=True)
-        
+
+    country = cq.data.split("|")[1]
+
+    # Check if already exists
+    existing = [c["name"] for c in get_countries()]
+    if country in existing:
+        return await cq.answer(f"⚠️ Country **{country}** already added", show_alert=True)
+
+    add_country(country)
+    await cq.answer(f"✅ Country **{country}** added", show_alert=True)
+
+    # Update message to reflect success
     await cq.message.edit_text(
-        "❌ **Remove Country**\n\n"
-        "To remove a country, use the command:\n"
-        "`/removecountry [Name]`\n\n"
-        "Example: `/removecountry India`",
+        f"✅ Country **{country}** added successfully.",
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
     )
