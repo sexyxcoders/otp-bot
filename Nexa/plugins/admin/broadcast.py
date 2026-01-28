@@ -1,12 +1,21 @@
 from Nexa.core.client import app
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
+from pyrogram.errors import FloodWait
 import config
 from Nexa.database.mongo import users
 import asyncio
 
-# Track which admin is in broadcast mode
+# ---------------------------
+# BROADCAST STATE
+# Keeps track of admins in broadcast mode and if cancel is requested
+# Example:
+# BROADCAST_STATE = {
+#     admin_id: {"active": True, "cancel": False}
+# }
+# ---------------------------
 BROADCAST_STATE = {}
+
 
 # ---------------------------
 # OPEN BROADCAST MODE
@@ -16,10 +25,13 @@ async def admin_broadcast_cb(client, cq):
     if cq.from_user.id not in config.ADMINS:
         return await cq.answer("❌ Not allowed", show_alert=True)
 
-    BROADCAST_STATE[cq.from_user.id] = True
+    # Set broadcast active for this admin
+    BROADCAST_STATE[cq.from_user.id] = {"active": True, "cancel": False}
+
     await cq.message.edit_text(
-        "📣 **Broadcast Mode**\n\n"
-        "Send the message (text, photo, video, document, etc.) to broadcast to all users.",
+        "📣 **Broadcast Mode Activated**\n\n"
+        "Send any message (text, photo, video, document, etc.) to broadcast to all users.\n\n"
+        "Press ❌ Cancel to exit broadcast mode.",
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("❌ Cancel", callback_data="admin_broadcast_cancel")]
         ])
@@ -31,13 +43,19 @@ async def admin_broadcast_cb(client, cq):
 # ---------------------------
 @app.on_callback_query(filters.regex("^admin_broadcast_cancel$"))
 async def admin_broadcast_cancel_cb(client, cq):
-    BROADCAST_STATE.pop(cq.from_user.id, None)
-    await cq.message.edit_text(
-        "❌ **Broadcast Cancelled**",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]
-        ])
-    )
+    state = BROADCAST_STATE.get(cq.from_user.id)
+    if state:
+        # Mark cancel flag True
+        state["cancel"] = True
+        await cq.answer("❌ Broadcast cancelled!", show_alert=True)
+        await cq.message.edit_text(
+            "❌ **Broadcast Cancelled**",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]
+            ])
+        )
+    else:
+        await cq.answer("No broadcast in progress", show_alert=True)
 
 
 # ---------------------------
@@ -45,27 +63,51 @@ async def admin_broadcast_cancel_cb(client, cq):
 # ---------------------------
 @app.on_message(filters.private & filters.user(config.ADMINS))
 async def broadcast_handler(client, msg: Message):
-    if not BROADCAST_STATE.get(msg.from_user.id):
-        return msg.continue_propagation()
+    state = BROADCAST_STATE.get(msg.from_user.id)
+    if not state or not state.get("active"):
+        return  # Admin not in broadcast mode
 
-    # Remove admin from broadcast state
-    BROADCAST_STATE.pop(msg.from_user.id)
+    # Remove active flag so next messages don't trigger multiple broadcasts
+    state["active"] = False
 
-    # Notify admin
     status_msg = await msg.reply_text("📣 **Broadcast started...**")
 
-    # Fetch all users
     all_users = list(users.find({}, {"user_id": 1}))
+    total = len(all_users)
     sent = 0
     failed = 0
 
-    for u in all_users:
+    for i, u in enumerate(all_users, start=1):
+        # Check if admin cancelled broadcast mid-way
+        if state.get("cancel"):
+            await status_msg.edit_text(
+                f"❌ **Broadcast Cancelled Midway**\n\n"
+                f"✅ Sent: `{sent}`\n"
+                f"❌ Failed: `{failed}`\n"
+                f"📊 Progress: {i-1}/{total}",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]
+                ])
+            )
+            BROADCAST_STATE.pop(msg.from_user.id, None)
+            return
+
         try:
-            # Copy message to user
             await msg.copy(chat_id=u["user_id"])
             sent += 1
-            # slight delay to prevent flood
-            await asyncio.sleep(0.05)
+
+            # Update progress every 50 users
+            if i % 50 == 0:
+                await status_msg.edit_text(
+                    f"📣 **Broadcast in progress...**\n\n"
+                    f"✅ Sent: {sent}\n"
+                    f"❌ Failed: {failed}\n"
+                    f"📊 Progress: {i}/{total}"
+                )
+
+            await asyncio.sleep(0.3)  # Delay to avoid flood
+        except FloodWait as e:
+            await asyncio.sleep(e.value)
         except Exception:
             failed += 1
             continue
@@ -78,4 +120,7 @@ async def broadcast_handler(client, msg: Message):
         reply_markup=InlineKeyboardMarkup([
             [InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]
         ])
-    ) 
+    )
+
+    # Clean up state
+    BROADCAST_STATE.pop(msg.from_user.id, None)
