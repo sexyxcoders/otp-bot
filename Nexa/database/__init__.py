@@ -2,11 +2,9 @@ from .users import (
     create_user,
     update_username,
     get_user,
-
     get_balance,
     add_balance,
     deduct_balance,
-
     is_admin
 )
 
@@ -35,21 +33,24 @@ from .referral import (
     reset_referral_earnings
 )
 
+# -----------------------
+# Sessions
+# -----------------------
 from .sessions import (
     add_session,
     remove_session,
     update_stock,
     get_session,
-    get_available_countries,   # ✅ must match exactly
+    get_available_countries,   # ✅ matches the new sessions.py
     get_country_info,
-    assign_session_to_user,
     revoke_session,
-    expire_session,
     add_country,
     remove_country,
     get_countries,
     set_price,
-    get_price
+    get_price,
+    list_sessions,             # ✅ added for admin list_sessions()
+    normalize_country          # ✅ added helper
 )
 
 from .otp_codes import (
