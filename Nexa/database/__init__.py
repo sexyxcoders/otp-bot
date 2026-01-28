@@ -41,7 +41,7 @@ from .sessions import (
     remove_session,
     update_stock,
     get_session,
-    get_available_countries,   # ✅ matches the new sessions.py
+    get_available_countries,
     get_country_info,
     revoke_session,
     add_country,
@@ -49,8 +49,9 @@ from .sessions import (
     get_countries,
     set_price,
     get_price,
-    list_sessions,             # ✅ added for admin list_sessions()
-    normalize_country          # ✅ added helper
+    list_sessions,
+    normalize_country,
+    assign_session_to_user   # ✅ added here
 )
 
 from .otp_codes import (
