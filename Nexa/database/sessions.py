@@ -109,3 +109,24 @@ def assign_session_to_user(user_id, country):
             {"$set": {"assigned_to": user_id, "assigned_at": datetime.utcnow()}}
         )
     return session
+
+# -----------------------
+# Expire old sessions
+# -----------------------
+def expire_session(expire_seconds=3600):
+    """
+    Mark sessions as expired if they were assigned but not used
+    within a certain timeframe (expire_seconds, default 1 hour).
+    """
+    from datetime import datetime, timedelta
+
+    cutoff = datetime.utcnow() - timedelta(seconds=expire_seconds)
+    result = sessions_col.update_many(
+        {
+            "assigned_at": {"$lt": cutoff},
+            "assigned_to": {"$exists": True},
+            "revoked": False
+        },
+        {"$set": {"revoked": True, "revoked_at": datetime.utcnow()}}
+    )
+    return result.modified_count
