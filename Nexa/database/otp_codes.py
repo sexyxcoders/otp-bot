@@ -1,34 +1,27 @@
-from Nexa.database.mongo import otp_codes
-from datetime import datetime, timedelta
+from Nexa.database.mongo import db
+from datetime import datetime
+
+otp_col = db.otp_codes
 
 
-def store_otp(session_id, user_id, otp_code, ttl_min=5):
-    otp_codes.insert_one({
+def store_otp(session_id, code: str):
+    otp_col.insert_one({
         "session_id": session_id,
-        "user_id": user_id,
-        "otp_code": otp_code,
-        "status": "unused",
-        "created_at": datetime.utcnow(),
-        "expires_at": datetime.utcnow() + timedelta(minutes=ttl_min)
+        "code": code,
+        "used": False,
+        "created_at": datetime.utcnow()
     })
 
 
 def get_latest_otp(session_id):
-    return otp_codes.find_one(
-        {
-            "session_id": session_id,
-            "status": "unused",
-            "expires_at": {"$gt": datetime.utcnow()}
-        },
+    return otp_col.find_one(
+        {"session_id": session_id, "used": False},
         sort=[("created_at", -1)]
     )
 
 
 def mark_otp_used(otp_id):
-    otp_codes.update_one(
+    otp_col.update_one(
         {"_id": otp_id},
-        {"$set": {
-            "status": "used",
-            "used_at": datetime.utcnow()
-        }}
+        {"$set": {"used": True}}
     )
