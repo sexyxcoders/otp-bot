@@ -5,19 +5,19 @@ import os
 # ==============================
 API_ID = int(os.getenv("API_ID", "22657083"))
 API_HASH = os.getenv("API_HASH", "d6186691704bd901bdab275ceaab88f3")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "8514565111:AAFr2mBDp_rCQ_zihv00pQIs8IhRmPXqdXI")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8041174184:AAGhEDwYfr-U_6tXakp95sTkpPTUJCOHJ7M")
 
 # ==============================
 # Bot Details
 # ==============================
 BOT_NAME = os.getenv("BOT_NAME", "Neca")
-BOT_USERNAME = os.getenv("BOT_USERNAME", "dkhaskdh983bot")
+BOT_USERNAME = os.getenv("BOT_USERNAME", "LucusMusicBot")
 
 # ==============================
 # Must Join Channel (without @)
 # ==============================
 # Must join channel (without @)
-MUST_JOIN = "test26389"
+MUST_JOIN = "NexaCoders"
 
 # ==============================
 # Admin Telegram User IDs
@@ -26,7 +26,7 @@ ADMINS = [8422195674, 8553815122]  # apna Telegram user_id daalo
 
 LOGS_CHANNEL = int(os.getenv("LOGS_CHANNEL", "-1003788903501"))
 
-LOGS_CHANNEL = "@test26389"
+LOGS_CHANNEL = "@logchannelofsms"
 
 # ==============================
 # MongoDB Configuration 
