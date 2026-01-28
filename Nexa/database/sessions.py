@@ -1,82 +1,106 @@
-from Nexa.database.mongo import db
+from pymongo import MongoClient
 from datetime import datetime
+import config
+
+client = MongoClient(config.MONGO_URL)
+db = client['nexa_bot']
 
 sessions_col = db.sessions
 
+# -----------------------
+# Add country session
+# -----------------------
+def add_country(country):
+    if not sessions_col.find_one({"country": country}):
+        sessions_col.insert_one({
+            "country": country,
+            "price": 0,
+            "stock": 0,
+            "sessions": [],
+            "created_at": datetime.utcnow()
+        })
 
-# ---------- COUNTRY ----------
-def add_country(country: str, price: int):
-    if sessions_col.find_one({"country": country}):
-        return
-    sessions_col.insert_one({
-        "country": country,
-        "price": price,
-        "stock": 0,
-        "created_at": datetime.utcnow()
-    })
-
-
-def remove_country(country: str):
+def remove_country(country):
     sessions_col.delete_many({"country": country})
 
+def set_price(country, price):
+    sessions_col.update_many({"country": country}, {"$set": {"price": price}})
+
+def get_price(country):
+    c = sessions_col.find_one({"country": country})
+    return c.get("price") if c else None
 
 def get_countries():
-    return sessions_col.distinct("country")
+    return [c["country"] for c in sessions_col.find()]
 
+def get_available_countries():
+    return get_countries()
 
-def get_country_info(country: str):
-    return sessions_col.find_one({"country": country})
-
-
-# ---------- PRICE ----------
-def set_price(country: str, price: int):
-    sessions_col.update_many(
-        {"country": country},
-        {"$set": {"price": price}}
-    )
-
-
-def get_price(country: str):
-    data = sessions_col.find_one({"country": country})
-    return data["price"] if data else None
-
-
-# ---------- SESSION ----------
-def add_session(country: str, session_string: str, phone: str):
-    sessions_col.insert_one({
-        "country": country,
-        "session_string": session_string,
-        "phone": phone,
-        "used": False,
+# -----------------------
+# Add session string + stock
+# -----------------------
+def add_session(country, string, stock=1):
+    session = {
+        "session_id": string[:10] + str(datetime.utcnow().timestamp()),
+        "string": string,
+        "stock": stock,
         "assigned_to": None,
+        "revoked": False,
         "created_at": datetime.utcnow()
-    })
+    }
+    sessions_col.update_one({"country": country}, {"$push": {"sessions": session}})
+    return session
 
-
-def get_available_session(country: str):
-    return sessions_col.find_one({
-        "country": country,
-        "used": False
-    })
-
-
-def mark_session_used(session_id, user_id):
-    sessions_col.update_one(
-        {"_id": session_id},
-        {"$set": {"used": True, "assigned_to": user_id}}
-    )
-
-
-def expire_session(session_id):
-    sessions_col.delete_one({"_id": session_id})
-
+def remove_session(session_id):
+    sessions_col.update_many({}, {"$pull": {"sessions": {"session_id": session_id}}})
 
 def revoke_session(session_id):
-    expire_session(session_id)
+    sessions_col.update_many(
+        {"sessions.session_id": session_id},
+        {"$set": {"sessions.$.revoked": True}}
+    )
 
+# -----------------------
+# Assign session to user automatically
+# -----------------------
+def assign_session_to_user(user_id, country):
+    country_doc = sessions_col.find_one({"country": country})
+    if not country_doc:
+        return None
 
-def update_stock(country: str):
-    return sessions_col.count_documents({
-        "country": country,
-        "used": False
-    })
+    for sess in country_doc["sessions"]:
+        if sess["assigned_to"] is None and sess["stock"] > 0 and not sess["revoked"]:
+            # Assign session
+            sess["assigned_to"] = user_id
+            sess["assigned_at"] = datetime.utcnow()
+            sessions_col.update_one(
+                {"country": country, "sessions.session_id": sess["session_id"]},
+                {"$set": sess}
+            )
+            return sess
+    return None
+
+# -----------------------
+# Expire session for user
+# -----------------------
+def expire_session(session_id):
+    sessions_col.update_many(
+        {"sessions.session_id": session_id},
+        {"$set": {"sessions.$.assigned_to": None, "sessions.$.assigned_at": None}}
+    )
+
+# -----------------------
+# Update stock
+# -----------------------
+def update_stock(country, qty):
+    # update first available session stock
+    sessions_col.update_one(
+        {"country": country, "sessions.stock": {"$gt": 0}},
+        {"$inc": {"sessions.$.stock": qty}}
+    )
+
+# -----------------------
+# Get session by ID
+# -----------------------
+def get_session(session_id):
+    return sessions_col.find_one({"sessions.session_id": session_id}, {"sessions.$": 1})
