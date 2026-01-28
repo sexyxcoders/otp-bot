@@ -44,6 +44,7 @@ from .sessions import (
     get_available_countries,
     get_country_info,
     revoke_session,
+    expire_session,
     add_country,
     remove_country,
     get_countries,
@@ -51,7 +52,8 @@ from .sessions import (
     get_price,
     list_sessions,
     normalize_country,
-    assign_session_to_user   # ✅ added here
+    assign_session_to_user,
+    get_active_sessions   # ✅ add here
 )
 
 from .otp_codes import (
