@@ -2,16 +2,17 @@ from pymongo import MongoClient
 from datetime import datetime
 import config
 
+# MongoDB connection
 client = MongoClient(config.MONGO_URL)
 db = client['nexa_bot']
 sessions_col = db.sessions
 
 # -----------------------
-# Add a session
+# Add a new session
 # -----------------------
-def add_session(country: str, price: float, stock: int, string: str, two_step: bool = False, added_by: int = None):
+def add_session(country: str, price: float, stock: int, string: str, two_step: bool=False, added_by=None):
     session = {
-        "session_id": string[:10] + str(int(datetime.utcnow().timestamp())),
+        "session_id": string[:10] + str(datetime.utcnow().timestamp()),
         "country": country,
         "price": price,
         "stock": stock,
@@ -25,22 +26,22 @@ def add_session(country: str, price: float, stock: int, string: str, two_step: b
     return session
 
 # -----------------------
-# Remove a session
+# Remove session
 # -----------------------
 def remove_session(session_id: str):
     sessions_col.delete_one({"session_id": session_id})
 
 # -----------------------
-# Revoke a session
+# Revoke session manually
 # -----------------------
-def revoke_session(session_id: str, revoked_by: int = None, revoked_at: datetime = None):
+def revoke_session(session_id: str, revoked_by=None):
     sessions_col.update_one(
         {"session_id": session_id},
-        {"$set": {"revoked": True, "revoked_by": revoked_by, "revoked_at": revoked_at or datetime.utcnow()}}
+        {"$set": {"revoked": True, "revoked_by": revoked_by, "revoked_at": datetime.utcnow()}}
     )
 
 # -----------------------
-# Expire old sessions
+# Expire old sessions (cleanup)
 # -----------------------
 def expire_session(expire_before: datetime):
     sessions_col.update_many(
@@ -61,7 +62,7 @@ def get_session(session_id: str):
     return sessions_col.find_one({"session_id": session_id})
 
 # -----------------------
-# Get available session for OTP
+# Get available session for OTP assignment
 # -----------------------
 def get_available_session(country: str = None):
     query = {"stock": {"$gt": 0}, "revoked": False}
@@ -102,7 +103,16 @@ def get_country_info(country: str):
     return sessions_col.find_one({"country": country})
 
 # -----------------------
-# Assign session to user
+# Mark session as used
+# -----------------------
+def mark_session_used(session_id: str):
+    sessions_col.update_one(
+        {"session_id": session_id},
+        {"$set": {"revoked": True, "used_at": datetime.utcnow()}}
+    )
+
+# -----------------------
+# Assign session to user (auto reduce stock & mark used)
 # -----------------------
 def assign_session_to_user(user_id: int, country: str = None):
     session = get_available_session(country)
@@ -110,4 +120,6 @@ def assign_session_to_user(user_id: int, country: str = None):
         return None
     # Reduce stock
     update_stock(session['country'], -1)
+    # Mark session as used
+    mark_session_used(session['session_id'])
     return session
