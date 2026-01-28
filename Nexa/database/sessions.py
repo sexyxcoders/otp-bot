@@ -80,3 +80,10 @@ def get_price(country):
 # -----------------------
 def get_countries():
     return list(sessions_col.find().distinct("country"))
+
+# -----------------------
+# Get country info by name
+# -----------------------
+def get_country_info(country):
+    """Return first session info for a country"""
+    return sessions_col.find_one({"country": country})
