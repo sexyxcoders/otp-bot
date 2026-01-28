@@ -6,7 +6,6 @@ from .start import *
 from .profile import *
 from .deposit import *
 from .referral import *
-from .history import *
 from .wallet import *
 
 # Sessions
