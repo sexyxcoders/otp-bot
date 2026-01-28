@@ -3,4 +3,4 @@ from .deposit import *
 from .wallet import *
 from .start import *
 from .referral import *
-from .history import *
+from .order_history import *
