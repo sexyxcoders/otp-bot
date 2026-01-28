@@ -130,3 +130,31 @@ def expire_session(expire_seconds=3600):
         {"$set": {"revoked": True, "revoked_at": datetime.utcnow()}}
     )
     return result.modified_count
+
+# -----------------------
+# Add / Remove country
+# -----------------------
+def add_country(country_name):
+    """
+    Add a country if it doesn't exist.
+    Creates a dummy session for the country to hold stock/prices.
+    """
+    exists = sessions_col.find_one({"country": country_name})
+    if not exists:
+        sessions_col.insert_one({
+            "session_id": f"country_{country_name}_{datetime.utcnow().timestamp()}",
+            "country": country_name,
+            "price": 0,
+            "stock": 0,
+            "string": None,
+            "two_step": False,
+            "added_by": None,
+            "created_at": datetime.utcnow(),
+            "revoked": False
+        })
+
+def remove_country(country_name):
+    """
+    Remove all sessions for a given country.
+    """
+    sessions_col.delete_many({"country": country_name})
