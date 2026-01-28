@@ -64,12 +64,19 @@ async def admin_broadcast_cancel_cb(client, cq):
 @app.on_message(filters.private & filters.user(config.ADMINS))
 async def broadcast_handler(client, msg: Message):
     state = BROADCAST_STATE.get(msg.from_user.id)
-    if not state or not state.get("active"):
-        return  # Admin not in broadcast mode
+    if not state or state.get("cancel") or not state.get("active"):
+        return  # Not in broadcast mode
 
-    # Remove active flag so next messages don't trigger multiple broadcasts
+    # Mark active False to avoid multiple triggers
     state["active"] = False
 
+    await start_broadcast(msg, state)
+
+
+# ---------------------------
+# BROADCAST LOGIC
+# ---------------------------
+async def start_broadcast(msg: Message, state):
     status_msg = await msg.reply_text("📣 **Broadcast started...**")
 
     all_users = list(users.find({}, {"user_id": 1}))
