@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from datetime import datetime
 import config
 
-client = MongoClient(config.MONGO_URI)
+client = MongoClient(config.MONGO_URL)
 db = client['nexa_bot']
 
 sessions_col = db.sessions
