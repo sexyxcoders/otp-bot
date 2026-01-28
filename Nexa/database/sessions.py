@@ -1,96 +1,76 @@
 # Nexa/database/sessions.py
+from pymongo import MongoClient
 from datetime import datetime
+import config
 
-# If you use MongoDB, replace this list with proper collection calls
-sessions_db = []  # List of all sessions
-countries_db = []  # List of countries
+client = MongoClient(config.MONGO_URI)
+db = client['nexa_bot']
 
+sessions_col = db.sessions
 
-# -----------------------------
-# Country Management
-# -----------------------------
-def add_country(name):
-    name = name.strip()
-    if name not in countries_db:
-        countries_db.append({"name": name})
-
-
-def remove_country(name):
-    global countries_db
-    countries_db = [c for c in countries_db if c["name"] != name]
-
-
-def get_countries():
-    return countries_db
-
-
-# -----------------------------
-# Session Management
-# -----------------------------
-def add_session(country, price, stock, string_session, two_step=False, added_by=None):
-    session_id = len(sessions_db) + 1
-    sessions_db.append({
-        "id": session_id,
+# -----------------------
+# Add session
+# -----------------------
+def add_session(country, price, stock, string, two_step=False, added_by=None):
+    session = {
+        "session_id": string[:10] + str(datetime.utcnow().timestamp()),  # unique ID
         "country": country,
         "price": price,
         "stock": stock,
-        "session": string_session,
+        "string": string,
         "two_step": two_step,
         "added_by": added_by,
-        "revoked": False,
-        "created_at": datetime.utcnow()
-    })
-    return session_id
+        "created_at": datetime.utcnow(),
+        "revoked": False
+    }
+    sessions_col.insert_one(session)
+    return session
 
-
+# -----------------------
+# Remove session
+# -----------------------
 def remove_session(session_id):
-    global sessions_db
-    sessions_db = [s for s in sessions_db if str(s["id"]) != str(session_id)]
+    sessions_col.delete_one({"session_id": session_id})
 
-
-def get_session(session_id):
-    for s in sessions_db:
-        if str(s["id"]) == str(session_id):
-            return s
-    return None
-
-
-def list_sessions():
-    return sessions_db
-
-
+# -----------------------
+# Revoke session
+# -----------------------
 def revoke_session(session_id, revoked_by=None, revoked_at=None):
-    s = get_session(session_id)
-    if s:
-        s["revoked"] = True
-        s["revoked_by"] = revoked_by
-        s["revoked_at"] = revoked_at or datetime.utcnow()
-        return True
-    return False
+    sessions_col.update_one(
+        {"session_id": session_id},
+        {"$set": {"revoked": True, "revoked_by": revoked_by, "revoked_at": revoked_at}}
+    )
 
+# -----------------------
+# List all sessions
+# -----------------------
+def list_sessions():
+    return list(sessions_col.find())
 
-# -----------------------------
-# Stock Management
-# -----------------------------
-def update_stock(country, qty_change):
-    for s in sessions_db:
-        if s["country"] == country:
-            s["stock"] += qty_change
-            if s["stock"] < 0:
-                s["stock"] = 0
+# -----------------------
+# Get available countries from sessions
+# -----------------------
+def get_available_countries():
+    return sessions_col.distinct("country")
 
+# -----------------------
+# Update stock
+# -----------------------
+def update_stock(country, qty):
+    sessions_col.update_many({"country": country}, {"$inc": {"stock": qty}})
 
-# -----------------------------
-# Price Management
-# -----------------------------
+# -----------------------
+# Set/Get price
+# -----------------------
 def set_price(country, price):
-    for s in sessions_db:
-        if s["country"] == country:
-            s["price"] = price
-
+    sessions_col.update_many({"country": country}, {"$set": {"price": price}})
 
 def get_price(country):
-    for s in sessions_db:
-        if s["country"] == country:
-            return s.get("price", None)
-    return None
+    s = sessions_col.find_one({"country": country})
+    return s.get("price") if s else None
+
+# -----------------------
+# Get all countries
+# -----------------------
+def get_countries():
+    return list(sessions_col.find().distinct("country"))
