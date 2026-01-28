@@ -7,6 +7,7 @@ from .users import (
     create_user,
     update_username,
     get_user,
+    ensure_user,        # ✅ Add this
     get_balance,
     add_balance,
     deduct_balance,
