@@ -23,6 +23,16 @@ def normalize_country(country_name: str) -> str:
         return ""
     return " ".join(word.capitalize() for word in country_name.strip().split())
 
+
+# In Nexa/database/sessions.py
+def assign_session_to_user(session_id, user_id):
+    """Assign a session to a user (dummy implementation)"""
+    sessions_col.update_one(
+        {"session_id": session_id},
+        {"$set": {"assigned_to": user_id}}
+    )
+    return True
+
 # -----------------------
 # Country Management
 # -----------------------
