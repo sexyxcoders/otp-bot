@@ -11,7 +11,6 @@ from . import start
 from . import profile
 from . import deposit
 from . import referral
-from . import history
 from . import wallet
 from . import order_history
 from . import sessions  # user sessions
