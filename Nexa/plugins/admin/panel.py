@@ -4,25 +4,25 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from Nexa.database.users import is_admin
 
 # -----------------------
-# Admin Keyboard
+# Admin Keyboard Layout
 # -----------------------
 def admin_keyboard():
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🌍 Countries", callback_data="admin_countries"),
-            InlineKeyboardButton("➕ Add Country", callback_data="add_country")
+            InlineKeyboardButton("➕ Add Country", callback_data="admin_add_country")
         ],
         [
-            InlineKeyboardButton("❌ Remove Country", callback_data="remove_country"),
+            InlineKeyboardButton("❌ Remove Country", callback_data="admin_remove_country"),
             InlineKeyboardButton("💰 Prices", callback_data="admin_prices")
         ],
         [
             InlineKeyboardButton("📲 Sessions", callback_data="admin_sessions"),
-            InlineKeyboardButton("➕ Add Session", callback_data="admin_session")
+            InlineKeyboardButton("➕ Add Session", callback_data="admin_add_session")
         ],
         [
-            InlineKeyboardButton("❌ Remove Session", callback_data="remove_session"),
-            InlineKeyboardButton("🛑 Revoke Session", callback_data="revoke_session")
+            InlineKeyboardButton("❌ Remove Session", callback_data="admin_remove_session"),
+            InlineKeyboardButton("🛑 Revoke Session", callback_data="admin_revoke_session")
         ],
         [
             InlineKeyboardButton("📦 Stock", callback_data="admin_stock"),
@@ -46,15 +46,15 @@ def admin_keyboard():
     ])
 
 # -----------------------
-# Callback: Open Admin Panel
+# Callback Query: Open Admin Panel
 # -----------------------
 @app.on_callback_query(filters.regex("^admin_panel$"))
 async def admin_panel_cb(_, cq):
     if not is_admin(cq.from_user.id):
-        return await cq.answer("❌ Not allowed", show_alert=True)
+        return await cq.answer("❌ You are not an admin", show_alert=True)
 
     await cq.message.edit_text(
-        "👑 **Admin Panel**",
+        "👑 **Admin Panel**\n\nSelect an option below:",
         reply_markup=admin_keyboard()
     )
     await cq.answer()
@@ -68,6 +68,6 @@ async def admin_panel_cmd(_, message):
         return await message.reply_text("❌ You are not an admin")
 
     await message.reply_text(
-        "👑 **Admin Panel**",
+        "👑 **Admin Panel**\n\nSelect an option below:",
         reply_markup=admin_keyboard()
     )
