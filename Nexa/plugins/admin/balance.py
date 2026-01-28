@@ -1,7 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from Nexa.core.client import app
-from Nexa.database.users import get_balance, add_balance, deduct_balance, is_admin
+from Nexa.database.users import get_balance, add_balance, deduct_balance, is_admin, ensure_user
 
 # Track admin state for balance operations
 BALANCE_STATE = {}
@@ -76,13 +76,18 @@ async def handle_balance_input(_, message):
     except Exception:
         return await message.reply("❌ Invalid format. Use `<user_id> <amount>`")
 
+    # Make sure the user exists in DB
+    ensure_user(user_id)
+
     operation = BALANCE_STATE[admin_id]
     if operation == "add":
         add_balance(user_id, amount)
-        text = f"✅ Added ₹{amount} to user `{user_id}`.\nNew Balance: ₹{get_balance(user_id)}"
+        new_balance = get_balance(user_id)
+        text = f"✅ Added ₹{amount} to user `{user_id}`.\n💰 New Balance: ₹{new_balance}"
     else:
         deduct_balance(user_id, amount)
-        text = f"✅ Subtracted ₹{amount} from user `{user_id}`.\nNew Balance: ₹{get_balance(user_id)}"
+        new_balance = get_balance(user_id)
+        text = f"✅ Subtracted ₹{amount} from user `{user_id}`.\n💰 New Balance: ₹{new_balance}"
 
     BALANCE_STATE.pop(admin_id, None)
 
