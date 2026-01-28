@@ -8,14 +8,9 @@ import asyncio
 
 # ---------------------------
 # BROADCAST STATE
-# Keeps track of admins in broadcast mode and if cancel is requested
-# Example:
-# BROADCAST_STATE = {
-#     admin_id: {"active": True, "cancel": False}
-# }
+# Keeps track of admins in broadcast mode and cancel flag
 # ---------------------------
-BROADCAST_STATE = {}
-
+BROADCAST_STATE = {}  # {admin_id: {"active": True, "cancel": False}}
 
 # ---------------------------
 # OPEN BROADCAST MODE
@@ -25,7 +20,7 @@ async def admin_broadcast_cb(client, cq):
     if cq.from_user.id not in config.ADMINS:
         return await cq.answer("❌ Not allowed", show_alert=True)
 
-    # Set broadcast active for this admin
+    # Activate broadcast mode
     BROADCAST_STATE[cq.from_user.id] = {"active": True, "cancel": False}
 
     await cq.message.edit_text(
@@ -37,7 +32,6 @@ async def admin_broadcast_cb(client, cq):
         ])
     )
 
-
 # ---------------------------
 # CANCEL BROADCAST MODE
 # ---------------------------
@@ -45,7 +39,6 @@ async def admin_broadcast_cb(client, cq):
 async def admin_broadcast_cancel_cb(client, cq):
     state = BROADCAST_STATE.get(cq.from_user.id)
     if state:
-        # Mark cancel flag True
         state["cancel"] = True
         await cq.answer("❌ Broadcast cancelled!", show_alert=True)
         await cq.message.edit_text(
@@ -57,21 +50,19 @@ async def admin_broadcast_cancel_cb(client, cq):
     else:
         await cq.answer("No broadcast in progress", show_alert=True)
 
-
 # ---------------------------
 # HANDLE BROADCAST MESSAGE
 # ---------------------------
-@app.on_message(filters.private & filters.user(config.ADMINS))
+@app.on_message(filters.user(config.ADMINS))
 async def broadcast_handler(client, msg: Message):
     state = BROADCAST_STATE.get(msg.from_user.id)
     if not state or state.get("cancel") or not state.get("active"):
-        return  # Not in broadcast mode
+        return  # Admin not in broadcast mode
 
-    # Mark active False to avoid multiple triggers
+    # Mark active False to prevent multiple triggers
     state["active"] = False
 
     await start_broadcast(msg, state)
-
 
 # ---------------------------
 # BROADCAST LOGIC
@@ -85,7 +76,7 @@ async def start_broadcast(msg: Message, state):
     failed = 0
 
     for i, u in enumerate(all_users, start=1):
-        # Check if admin cancelled broadcast mid-way
+        # Stop if admin cancels mid-way
         if state.get("cancel"):
             await status_msg.edit_text(
                 f"❌ **Broadcast Cancelled Midway**\n\n"
@@ -112,7 +103,7 @@ async def start_broadcast(msg: Message, state):
                     f"📊 Progress: {i}/{total}"
                 )
 
-            await asyncio.sleep(0.3)  # Delay to avoid flood
+            await asyncio.sleep(0.3)  # avoid flood
         except FloodWait as e:
             await asyncio.sleep(e.value)
         except Exception:
@@ -129,5 +120,5 @@ async def start_broadcast(msg: Message, state):
         ])
     )
 
-    # Clean up state
+    # Clean up
     BROADCAST_STATE.pop(msg.from_user.id, None)
