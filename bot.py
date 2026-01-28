@@ -1,10 +1,10 @@
-# bot.py
 from Nexa.core.client import app
 
-# Import plugins AFTER app is initialized
-import Nexa.plugins         # root plugins
+# Import user plugins
+import Nexa.plugins
 
-import Nexa.plugins.admin   # admin plugins
+# Import admin plugins
+import Nexa.Admin
 
 if __name__ == "__main__":
     print("🚀 Bot is starting...")
