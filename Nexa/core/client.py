@@ -1,5 +1,3 @@
-# Nexa/core/client.py
-
 from pyrogram import Client
 import config
 
