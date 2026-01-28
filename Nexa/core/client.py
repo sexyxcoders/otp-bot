@@ -1,12 +1,11 @@
 from pyrogram import Client
-import os
-import config
+import config  # import your config.py
 
 app = Client(
     "NexaBot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN,
+    api_id=config.API_ID,
+    api_hash=config.API_HASH,
+    bot_token=config.BOT_TOKEN,
     plugins=dict(
         root=[]  # Plugins are manually imported in bot.py
     )
