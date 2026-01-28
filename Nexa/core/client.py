@@ -1,12 +1,15 @@
 from pyrogram import Client
+import os
 import config
 
-print(">>> CLIENT INITIALIZED <<<")
-
 app = Client(
-    name="nexa-bot",
-    api_id=config.API_ID,
-    api_hash=config.API_HASH,
-    bot_token=config.BOT_TOKEN,
-    plugins=dict(root="Nexa.plugins")  # 🔥 THIS LINE FIXED
+    "NexaBot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN,
+    plugins=dict(
+        root=[]  # Plugins are manually imported in bot.py
+    )
 )
+
+print(">>> CLIENT INITIALIZED <<<")
