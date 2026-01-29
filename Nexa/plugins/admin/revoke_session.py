@@ -1,49 +1,43 @@
-# Nexa/plugins/admin/revoke_session.py
-from Nexa.core.client import app
 from pyrogram import filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from Nexa.database.users import is_admin
-from Nexa.database.sessions import list_sessions, revoke_session
+from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from core.client import app
+from database.sessions import mongo
+import os
+from dotenv import load_dotenv
 
-@app.on_callback_query(filters.regex("^admin_revoke_session$"))
-async def revoke_session_cb(_, cq):
-    if not is_admin(cq.from_user.id):
-        return await cq.answer("❌ Not allowed", show_alert=True)
+load_dotenv()
+ADMIN_ID = int(os.getenv("ADMIN_ID"))
 
-    sessions = list_sessions()
-    if not sessions:
-        return await cq.message.edit_text(
-            "🛑 No sessions available to revoke.",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back", callback_data="admin_panel")]])
-        )
-
-    buttons = [
-        [InlineKeyboardButton(f"{s['country']} | {s['string'][:10]} | Stock: {s['stock']}", callback_data=f"revoke|{s['session_id']}")]
-        for s in sessions if not s.get("revoked", False)
-    ]
-
-    if not buttons:
-        buttons = [[InlineKeyboardButton("All sessions already revoked", callback_data="noop")]]
-
-    buttons.append([InlineKeyboardButton("🔙 Back", callback_data="admin_panel")])
-
-    await cq.message.edit_text(
-        "🛑 **Revoke Session**\nSelect a session to revoke:",
-        reply_markup=InlineKeyboardMarkup(buttons)
+@app.on_callback_query(filters.regex("^revoke_(.+)$") & filters.user(ADMIN_ID))
+async def confirm_revoke(client, callback: CallbackQuery):
+    session_id = callback.matches[0].group(1)
+    
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("✅ CONFIRM DELETE", callback_data=f"delete_{session_id}")],
+        [InlineKeyboardButton("❌ Cancel", callback_data="admin_sessions")]
+    ])
+    
+    await callback.message.edit_text(
+        f"⚠️ **Confirm Delete Session**\n\n"
+        f"Session ID: `{session_id}`\n\n"
+        f"This action is **irreversible**.",
+        reply_markup=kb,
+        parse_mode="Markdown"
     )
 
-
-# -------------------------------
-# Handle revoke callback
-# -------------------------------
-@app.on_callback_query(filters.regex(r"^revoke\|(.+)$"))
-async def handle_revoke(_, cq):
-    if not is_admin(cq.from_user.id):
-        return await cq.answer("❌ Not allowed", show_alert=True)
-
-    session_id = cq.data.split("|")[1]
-    revoke_session(session_id)
-    await cq.answer("✅ Session revoked", show_alert=True)
-
-    # Refresh the revoke panel
-    await revoke_session_cb(_, cq)
+@app.on_callback_query(filters.regex("^delete_(.+)$") & filters.user(ADMIN_ID))
+async def delete_session(client, callback: CallbackQuery):
+    session_id = callback.matches[0].group(1)
+    result = await mongo.db.sessions.delete_one({"_id": session_id})
+    
+    if result.deleted_count:
+        await callback.message.edit_text(
+            f"✅ **Session Deleted!**\n\n"
+            f"ID: `{session_id}`",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("📱 Sessions", callback_data="admin_sessions")]
+            ]),
+            parse_mode="Markdown"
+        )
+    else:
+        await callback.message.edit_text("❌ Session not found!")
