@@ -1,10 +1,10 @@
 # Pyrogram / Bot credentials
-API_ID = 123456             # Your Telegram API ID
-API_HASH = "YOUR_API_HASH"  # Your Telegram API Hash
-BOT_TOKEN = "BOT:TOKEN"     # Your Telegram Bot Token
+API_ID = 22657083             # Your Telegram API ID
+API_HASH = "d6186691704bd901bdab275ceaab88f3"  # Your Telegram API Hash
+BOT_TOKEN = "7883129570:AAENeLvTsdrAmFxFgzW0yYSP2RMsQ4TElp4"     # Your Telegram Bot Token
 
 # MongoDB connection
-MONGO_URI = "mongodb://localhost:27017"  # Replace with your MongoDB URI
+MONGO_URI = "mongodb+srv://krishvip39_db_user:Nqg0y3VXnfvacKRv@cluster0.e4cxyeg.mongodb.net/?appName=Cluster0"  # Replace with your MongoDB URI
 DB_NAME = "otp_panel"                     # Database name
 
 # Pricing & limits
