@@ -1,6 +1,5 @@
 from pyrogram import Client
 from config import API_ID, API_HASH, BOT_TOKEN
-
 from bot.handlers import start, buy, otp, deposit
 
 app = Client(
