@@ -1,19 +1,15 @@
-import os
+# Pyrogram / Bot credentials
+API_ID = 123456             # Your Telegram API ID
+API_HASH = "YOUR_API_HASH"  # Your Telegram API Hash
+BOT_TOKEN = "BOT:TOKEN"     # Your Telegram Bot Token
 
-# ----------------------------
-# Bot / API
-# ----------------------------
-API_ID = int(os.getenv("API_ID", "22657083"))        # Telegram API ID
-API_HASH = os.getenv("API_HASH", "d6186691704bd901bdab275ceaab88f3") # Telegram API Hash
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7883129570:AAENeLvTsdrAmFxFgzW0yYSP2RMsQ4TElp4")
+# MongoDB connection
+MONGO_URI = "mongodb://localhost:27017"  # Replace with your MongoDB URI
+DB_NAME = "otp_panel"                     # Database name
 
-# ----------------------------
-# MongoDB
-# ----------------------------
-MONGO_URL = os.getenv("MONGO_URL", "mongodb+srv://krishvip39_db_user:Nqg0y3VXnfvacKRv@cluster0.e4cxyeg.mongodb.net/?appName=Cluster0")
+# Pricing & limits
+PRICE = 10                # Price per OTP
+OTP_EXPIRY = 600          # OTP expiry in seconds (10 min)
 
-# ----------------------------
-# Admins
-# ----------------------------
-ADMINS = [int(x) for x in os.getenv("ADMINS", "8553815122").split()]  # space-separated IDs
-
+# Admin Telegram ID
+ADMIN_ID = 123456789      # Replace with your Telegram ID
