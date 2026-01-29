@@ -12,4 +12,4 @@ PRICE = 10                # Price per OTP
 OTP_EXPIRY = 600          # OTP expiry in seconds (10 min)
 
 # Admin Telegram ID
-ADMIN_ID = 123456789      # Replace with your Telegram ID
+ADMIN_ID = 8553815122      # Replace with your Telegram ID
