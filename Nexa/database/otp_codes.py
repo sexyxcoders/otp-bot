@@ -1,49 +1,22 @@
-from pymongo import MongoClient
-from datetime import datetime, timedelta
-import config
+from database.mongo import mongo
 
-client = MongoClient(config.MONGO_URL)
-db = client['nexa_bot']
+class OTPCodeManager:
+    @staticmethod
+    async def store_otp(session_number: str, otp: str, user_id: int):
+        """Store received OTP"""
+        await mongo.db.otp_codes.insert_one({
+            "session_number": session_number,
+            "otp": otp,
+            "user_id": user_id,
+            "received_at": datetime.utcnow(),
+            "expires_at": datetime.utcnow() + timedelta(minutes=10)
+        })
+    
+    @staticmethod
+    async def get_user_otps(user_id: int, limit: int = 10):
+        """Get user's recent OTPs"""
+        return await mongo.db.otp_codes.find(
+            {"user_id": user_id}
+        ).sort("received_at", -1).limit(limit).to_list(None)
 
-otp_col = db.otp_codes
-
-OTP_EXPIRE_MINUTES = 5
-
-# -----------------------
-# Store OTP for a session
-# -----------------------
-def store_otp(session_id, otp):
-    otp_col.insert_one({
-        "session_id": session_id,
-        "otp": otp,
-        "used": False,
-        "created_at": datetime.utcnow()
-    })
-
-# -----------------------
-# Get latest OTP for session
-# -----------------------
-def get_latest_otp(session_id):
-    return otp_col.find_one(
-        {"session_id": session_id, "used": False},
-        sort=[("created_at", -1)]
-    )
-
-# -----------------------
-# Mark OTP as used
-# -----------------------
-def mark_otp_used(session_id, otp):
-    otp_col.update_one(
-        {"session_id": session_id, "otp": otp},
-        {"$set": {"used": True}}
-    )
-
-# -----------------------
-# Expire OTP older than X minutes
-# -----------------------
-def expire_otps():
-    expire_time = datetime.utcnow() - timedelta(minutes=OTP_EXPIRE_MINUTES)
-    otp_col.update_many(
-        {"used": False, "created_at": {"$lt": expire_time}},
-        {"$set": {"used": True}}
-    )
+otp_codes_manager = OTPCodeManager()
